@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>derp_3d - v3</title>
+    <title>derp_3d - v4</title>
     <style>
         body {
             margin: 0;
@@ -101,6 +101,12 @@
             border-color: #555;
         }
 
+        button.active-mode {
+            background: #00ffcc;
+            color: #1a1a1a;
+            border-color: #fff;
+        }
+
         button.danger:hover {
             background: #a32a2a;
             border-color: #ff4444;
@@ -132,6 +138,31 @@
             cursor: pointer;
         }
 
+        #toolbox-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-height: 100px;
+            overflow-y: auto;
+            background: #111;
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        .toolbox-item {
+            font-size: 0.8rem;
+            background: #222;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            border: 1px solid #444;
+        }
+
+        .toolbox-item:hover {
+            border-color: #00ffcc;
+            background: #2b2b2b;
+        }
+
         footer {
             text-align: center;
             font-size: 0.75rem;
@@ -141,13 +172,7 @@
             padding: 6px 12px;
             border-radius: 20px;
             pointer-events: auto;
-        }
-
-        @media (max-width: 768px) {
-            #ui-container { padding: 8px; }
-            #controls-sidebar { width: 210px; font-size: 0.8rem; }
-            button { padding: 8px 6px; font-size: 0.75rem; }
-            footer { display: none; }
+            line-height: 1.4;
         }
     </style>
 </head>
@@ -157,31 +182,39 @@
 
     <div id="ui-container">
         <header class="panel" style="align-self: flex-start;">
-            <h1>derp_3d <span style="color:#888; font-size: 0.75rem;">v3.0</span></h1>
+            <h1>derp_3d <span style="color:#888; font-size: 0.75rem;">v4.0</span></h1>
         </header>
 
         <div id="controls-sidebar" class="panel">
             <div>
-                <div class="section-title">History</div>
+                <div class="section-title">Engine Mode</div>
                 <div class="btn-group">
-                    <button id="undo-btn" disabled>Undo</button>
-                    <button id="redo-btn" disabled>Redo</button>
+                    <button id="mode-design-btn" class="active-mode">Design Mode</button>
+                    <button id="mode-game-btn">Game Mode</button>
                 </div>
             </div>
 
             <div>
-                <div class="section-title">Add Geometry</div>
+                <div class="section-title">Build Tools</div>
                 <div class="btn-group">
                     <button id="add-cube-btn">+ Cube</button>
                     <button id="add-pyramid-btn">+ Pyramid</button>
                 </div>
                 <div class="btn-group">
-                    <button id="delete-cube-btn" class="danger">Delete Selected</button>
+                    <button id="rand-landscape-btn" style="background:#3a2a4a; border-color:#9944ff;">🎲 Random Mode</button>
+                    <button id="delete-cube-btn" class="danger">Delete</button>
                 </div>
                 <div class="setting-row">
-                    <label>Object Color</label>
+                    <label>Object Color (C)</label>
                     <input type="color" id="mesh-color" value="#8899aa">
                 </div>
+            </div>
+
+            <div>
+                <div class="section-title">Asset Toolbox</div>
+                <button id="save-toolbox-btn" style="margin-bottom:6px; width:100%;">Save Selection as Model</button>
+                <div id="toolbox-list">
+                    </div>
             </div>
 
             <div>
@@ -189,35 +222,22 @@
                 <div class="setting-row"><label style="color:#ff4444">X</label><input type="range" id="scale-x" min="0.1" max="5" step="0.1" value="1"></div>
                 <div class="setting-row"><label style="color:#44ff44">Y</label><input type="range" id="scale-y" min="0.1" max="5" step="0.1" value="1"></div>
                 <div class="setting-row"><label style="color:#4444ff">Z</label><input type="range" id="scale-z" min="0.1" max="5" step="0.1" value="1"></div>
+                <div class="setting-row"><label>Height</label><input type="range" id="pos-y" min="0" max="10" step="0.1" value="0"></div>
             </div>
 
             <div>
-                <div class="section-title">Height (Y Position)</div>
-                <div class="setting-row">
-                    <label>Elevation</label>
-                    <input type="range" id="pos-y" min="0" max="10" step="0.1" value="0.5">
-                </div>
-            </div>
-
-            <div>
-                <div class="section-title">Environment</div>
-                <div class="setting-row">
-                    <label>Background</label>
-                    <input type="color" id="bg-color" value="#1e1e1e">
-                </div>
-            </div>
-
-            <div>
-                <div class="section-title">Storage</div>
+                <div class="section-title">System</div>
                 <div class="btn-group">
-                    <button id="save-btn">Save Project</button>
-                    <button id="load-btn">Load Project</button>
+                    <button id="undo-btn" disabled>Undo</button>
+                    <button id="redo-btn" disabled>Redo</button>
                 </div>
             </div>
         </div>
 
         <footer>
-            <b>Left Click:</b> Select object / Orbit room | <b>Shift + Left Click & Drag:</b> Move object on ground | <b>Right Click:</b> Pan camera
+            <b>Design Controls:</b> Left Click = Select/Orbit | Shift + Left Drag = Slide Object | Ctrl + Left Click = Multi-Select<br>
+            <b>Hotkeys:</b> [C] Open Color Picker | [WASD] Fly Camera View<br>
+            <b>Game Mode Controls:</b> [WASD] Move Character Cube | [Spacebar] Jump
         </footer>
     </div>
 
@@ -225,13 +245,13 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <script>
-        // --- Core Scene Initialization ---
+        // --- Core Scene & Renderer ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x1e1e1e);
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(5, 5, 8);
+        camera.position.set(0, 8, 15);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -243,46 +263,51 @@
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
 
-        // --- Lights & Helpers ---
-        const ambientLight = new THREE.AmbientLight(0x777777, 0.7);
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0x777777, 0.8);
         scene.add(ambientLight);
-
-        const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        sunLight.position.set(10, 20, 10);
+        const sunLight = new THREE.DirectionalLight(0xffffff, 0.7);
+        sunLight.position.set(15, 30, 15);
         sunLight.castShadow = true;
         scene.add(sunLight);
 
-        const gridHelper = new THREE.GridHelper(20, 20, 0x00ffcc, 0x444444);
+        const gridHelper = new THREE.GridHelper(30, 30, 0x00ffcc, 0x444444);
         scene.add(gridHelper);
 
-        // Invisible plane used to calculate mouse drag positions on the floor floor
-        const dragPlane = new THREE.Mesh(
-            new THREE.PlaneGeometry(100, 100),
-            new THREE.MeshBasicMaterial({ visible: false })
-        );
+        const dragPlane = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshBasicMaterial({ visible: false }));
         dragPlane.rotation.x = -Math.PI / 2;
         scene.add(dragPlane);
 
-        // Trackers
+        // --- Core States & Tracking Variables ---
         let objectsList = [];
-        let selectedObject = null;
+        let selectedObjects = []; // Changed to array to support Multi-Select
+        let toolboxModels = [];
+        let activeEngineMode = 'design'; // 'design' or 'game'
         let isDraggingObject = false;
 
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
+        const keysPressed = {};
 
-        // Highlighting Visual Outline Box (A bounding box helper handles mismatched dimensions automatically)
-        const selectionBox = new THREE.BoxHelper(new THREE.Mesh(), 0x00ffcc);
-        selectionBox.visible = false;
-        scene.add(selectionBox);
+        // Multi-Selection Visualizers Group
+        const selectionGroup = new THREE.Group();
+        scene.add(selectionGroup);
 
-        // --- History Engine System ---
+        // --- Game Mode Character Variables ---
+        let playerMesh = null;
+        let playerVelocityY = 0;
+        let isGrounded = true;
+        const gravity = -0.015;
+        const jumpForce = 0.3;
+        const playerSpeed = 0.15;
+
+        // --- History Engine ---
         const undoStack = [];
         const redoStack = [];
 
         function saveHistoryState() {
             const state = objectsList.map(obj => ({
-                type: obj.geometry.type, // Tracks if BoxGeometry or ConeGeometry
+                type: obj.geometry.type,
                 position: obj.position.clone(),
                 scale: obj.scale.clone(),
                 color: obj.material.color.getHexString(),
@@ -308,31 +333,23 @@
         }
 
         function recordCurrentToStack(stack) {
-            const current = objectsList.map(obj => ({
+            stack.push(JSON.stringify(objectsList.map(obj => ({
                 type: obj.geometry.type,
                 position: obj.position.clone(),
                 scale: obj.scale.clone(),
                 color: obj.material.color.getHexString(),
                 id: obj.uuid
-            }));
-            stack.push(JSON.stringify(current));
+            }))));
         }
 
         function applyStateJSON(stateArray) {
             objectsList.forEach(obj => scene.remove(obj));
             objectsList = [];
-            selectObject(null);
+            clearSelection();
 
             stateArray.forEach(data => {
-                let geom;
-                // Detect whether object was a cube or a pyramid
-                if (data.type === 'ConeGeometry') {
-                    geom = new THREE.ConeGeometry(0.7, 1, 4);
-                    geom.rotateX(0); // Ensure point faces straight up
-                } else {
-                    geom = new THREE.BoxGeometry(1, 1, 1);
-                }
-                
+                let geom = data.type === 'ConeGeometry' ? new THREE.ConeGeometry(0.7, 1, 4) : new THREE.BoxGeometry(1, 1, 1);
+                geom.translate(0, 0.5, 0);
                 const mat = new THREE.MeshStandardMaterial({ color: parseInt(data.color, 16), roughness: 0.4 });
                 const mesh = new THREE.Mesh(geom, mat);
                 mesh.position.copy(data.position);
@@ -350,175 +367,355 @@
             document.getElementById('redo-btn').disabled = (redoStack.length === 0);
         }
 
-        // --- Core Spawning Logic ---
+        // --- Core Spawning & Generators ---
 
-        function spawnMesh(type) {
-            saveHistoryState();
-            
-            let geometry;
-            if (type === 'pyramid') {
-                // A cone with 4 radial segments makes a clean pyramid geometry
-                geometry = new THREE.ConeGeometry(0.7, 1, 4);
-                // Shift baseline geometry coordinate tracking up so base sits nicely at pivot floor
-                geometry.translate(0, 0.5, 0); 
-            } else {
-                geometry = new THREE.BoxGeometry(1, 1, 1);
-                geometry.translate(0, 0.5, 0);
-            }
+        function spawnMesh(type, pos = null, scale = null, colorHex = null) {
+            let geometry = type === 'pyramid' || type === 'ConeGeometry' ? new THREE.ConeGeometry(0.7, 1, 4) : new THREE.BoxGeometry(1, 1, 1);
+            geometry.translate(0, 0.5, 0);
 
-            const activeColor = document.getElementById('mesh-color').value;
+            const activeColor = colorHex || document.getElementById('mesh-color').value;
             const material = new THREE.MeshStandardMaterial({ color: activeColor, roughness: 0.4 });
             const mesh = new THREE.Mesh(geometry, material);
             
-            const offset = (Math.random() - 0.5) * 2;
-            mesh.position.set(offset, 0, offset);
+            if (pos) mesh.position.copy(pos);
+            else mesh.position.set((Math.random() - 0.5) * 4, 0, (Math.random() - 0.5) * 4);
+
+            if (scale) mesh.scale.copy(scale);
+            
             mesh.castShadow = true;
             mesh.receiveShadow = true;
 
             scene.add(mesh);
             objectsList.push(mesh);
-            selectObject(mesh);
+            return mesh;
+        }
+
+        // Procedural Landscape Engine (Random Mode)
+        document.getElementById('rand-landscape-btn').addEventListener('click', () => {
+            saveHistoryState();
+            // Clear current objects
+            objectsList.forEach(obj => scene.remove(obj));
+            objectsList = [];
+            clearSelection();
+
+            const spread = 24;
+            const density = 45;
+            const colors = ['#3f7a4c', '#556b2f', '#8b4513', '#cd853f', '#708090', '#483d8b'];
+
+            for (let i = 0; i < density; i++) {
+                const type = Math.random() > 0.45 ? 'cube' : 'pyramid';
+                const pos = new THREE.Vector3(
+                    (Math.random() - 0.5) * spread,
+                    0,
+                    (Math.random() - 0.5) * spread
+                );
+                
+                // Varied landscape sizing
+                const scale = new THREE.Vector3(
+                    0.5 + Math.random() * 2,
+                    0.5 + Math.random() * 3,
+                    0.5 + Math.random() * 2
+                );
+
+                const randColor = colors[Math.floor(Math.random() * colors.length)];
+                spawnMesh(type, pos, scale, randColor);
+            }
+        });
+
+        // --- Multi-Selection Management ---
+
+        function selectObject(object, appendMode = false) {
+            if (!appendMode) {
+                clearSelection();
+            }
+            
+            if (!selectedObjects.includes(object)) {
+                selectedObjects.push(object);
+            }
+            rebuildSelectionVisuals();
+            updateUIFromSelection();
+        }
+
+        function clearSelection() {
+            selectedObjects = [];
+            rebuildSelectionVisuals();
+        }
+
+        function rebuildSelectionVisuals() {
+            // Clear previous outline visuals
+            while(selectionGroup.children.length > 0) { 
+                selectionGroup.remove(selectionGroup.children[0]); 
+            }
+            
+            // Build fresh box wireframes for all highlighted targets
+            selectedObjects.forEach(obj => {
+                const boxHelper = new THREE.BoxHelper(obj, 0x00ffcc);
+                selectionGroup.add(boxHelper);
+            });
+        }
+
+        function updateUIFromSelection() {
+            if (selectedObjects.length === 1) {
+                const obj = selectedObjects[0];
+                document.getElementById('scale-x').value = obj.scale.x;
+                document.getElementById('scale-y').value = obj.scale.y;
+                document.getElementById('scale-z').value = obj.scale.z;
+                document.getElementById('pos-y').value = obj.position.y;
+                document.getElementById('mesh-color').value = "#" + obj.material.color.getHexString();
+            }
         }
 
         function deleteSelected() {
-            if (selectedObject) {
+            if (selectedObjects.length > 0) {
                 saveHistoryState();
-                scene.remove(selectedObject);
-                objectsList = objectsList.filter(o => o !== selectedObject);
-                selectObject(null);
+                selectedObjects.forEach(obj => {
+                    scene.remove(obj);
+                    objectsList = objectsList.filter(o => o !== obj);
+                });
+                clearSelection();
             }
         }
 
-        function selectObject(object) {
-            selectedObject = object;
-            if (selectedObject) {
-                selectionBox.setFromObject(selectedObject);
-                selectionBox.visible = true;
-                
-                document.getElementById('scale-x').value = selectedObject.scale.x;
-                document.getElementById('scale-y').value = selectedObject.scale.y;
-                document.getElementById('scale-z').value = selectedObject.scale.z;
-                document.getElementById('pos-y').value = selectedObject.position.y;
-                document.getElementById('mesh-color').value = "#" + selectedObject.material.color.getHexString();
+        // --- Asset Toolbox Engine ---
+        document.getElementById('save-toolbox-btn').addEventListener('click', () => {
+            if (selectedObjects.length === 0) return alert("Select at least 1 object to save a custom model configuration!");
+            
+            // Export relative properties format matching active item layout selections
+            const modelBundle = selectedObjects.map(obj => ({
+                type: obj.geometry.type,
+                relPos: obj.position.clone(), 
+                scale: obj.scale.clone(),
+                color: obj.material.color.getHexString()
+            }));
+
+            toolboxModels.push(modelBundle);
+            
+            // Build UI entry link button dynamically
+            const idx = toolboxModels.length - 1;
+            const item = document.createElement('div');
+            item.className = 'toolbox-item';
+            item.innerText = `Custom Model Asset #${idx + 1} (${selectedObjects.length} obj)`;
+            item.onclick = () => instantiateToolboxAsset(idx);
+            document.getElementById('toolbox-list').appendChild(item);
+        });
+
+        function instantiateToolboxAsset(index) {
+            saveHistoryState();
+            clearSelection();
+            const bundle = toolboxModels[index];
+            
+            // Re-spawn group collection into the map
+            bundle.forEach(data => {
+                // Add minor translation variance offset so assets don't merge perfectly over old anchors
+                const spawnPos = new THREE.Vector3().copy(data.relPos).add(new THREE.Vector3(2, 0, 2));
+                const newMesh = spawnMesh(data.type, spawnPos, data.scale, "#" + data.color);
+                selectObject(newMesh, true);
+            });
+        }
+
+        // --- Mode Control Actions Toggle ---
+        const designBtn = document.getElementById('mode-design-btn');
+        const gameBtn = document.getElementById('mode-game-btn');
+
+        designBtn.addEventListener('click', () => toggleEngineMode('design'));
+        gameBtn.addEventListener('click', () => toggleEngineMode('game'));
+
+        function toggleEngineMode(mode) {
+            if (activeEngineMode === mode) return;
+            activeEngineMode = mode;
+
+            if (mode === 'design') {
+                designBtn.className = 'active-mode';
+                gameBtn.className = '';
+                controls.enabled = true; // Turn look-around track back on
+                if (playerMesh) { scene.remove(playerMesh); playerMesh = null; }
             } else {
-                selectionBox.visible = false;
+                gameBtn.className = 'active-mode';
+                designBtn.className = '';
+                clearSelection();
+                controls.enabled = false; // Disable orbit control so game characters take inputs
+
+                // Spawn Character Object
+                const playerGeom = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+                playerGeom.translate(0, 0.4, 0);
+                const playerMat = new THREE.MeshStandardMaterial({ color: 0xff3333, roughness: 0.2 });
+                playerMesh = new THREE.Mesh(playerGeom, playerMat);
+                
+                // Find a logical spawn placement atop the first scene item if possible
+                if (objectsList.length > 0) {
+                    const baseObj = objectsList[0];
+                    playerMesh.position.set(baseObj.position.x, baseObj.position.y + baseObj.scale.y + 2, baseObj.position.z);
+                } else {
+                    playerMesh.position.set(0, 5, 0);
+                }
+                scene.add(playerMesh);
+                playerVelocityY = 0;
             }
         }
 
-        // --- Dragging & Input Systems Handling ---
-
-        function updateMouseCoordinates(e) {
-            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-        }
+        // --- Mouse & Shift Drag Logic Systems ---
 
         window.addEventListener('pointerdown', (e) => {
-            if (e.target.tagName !== 'CANVAS') return;
-            updateMouseCoordinates(e);
+            if (e.target.tagName !== 'CANVAS' || activeEngineMode === 'game') return;
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(objectsList);
 
             if (intersects.length > 0) {
-                const hitObject = intersects[0].object;
-                selectObject(hitObject);
+                const target = intersects[0].object;
+                
+                if (e.ctrlKey || e.metaKey) {
+                    selectObject(target, true); // Append into current selected targets group array
+                } else {
+                    if (!selectedObjects.includes(target)) {
+                        selectObject(target, false);
+                    }
+                }
 
-                // If holding Shift key, engage Drag-to-Move instead of Camera Orbiting
                 if (e.shiftKey) {
                     isDraggingObject = true;
-                    controls.enabled = false; // Disable viewport spinning while rearranging scene
+                    controls.enabled = false;
                     saveHistoryState();
                 }
             } else {
-                // Clicked blank space, keep selection box updated but clear handles if required
-                if(!e.shiftKey) selectObject(null);
+                if (!e.shiftKey && !e.ctrlKey) clearSelection();
             }
         });
 
         window.addEventListener('pointermove', (e) => {
-            if (!isDraggingObject || !selectedObject) return;
-            updateMouseCoordinates(e);
+            if (!isDraggingObject || selectedObjects.length === 0 || activeEngineMode === 'game') return;
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObject(dragPlane);
 
             if (intersects.length > 0) {
-                // Snaps object's X & Z coordinates straight onto the imaginary floor map vector
-                const pointOnFloor = intersects[0].point;
-                selectedObject.position.x = pointOnFloor.x;
-                selectedObject.position.z = pointOnFloor.z;
+                const floorPoint = intersects[0].point;
+                
+                // Calculate moving displacement delta offset relative to first element anchor
+                const leader = selectedObjects[0];
+                const deltaX = floorPoint.x - leader.position.x;
+                const deltaZ = floorPoint.z - leader.position.z;
+
+                selectedObjects.forEach(obj => {
+                    obj.position.x += deltaX;
+                    obj.position.z += deltaZ;
+                });
+                rebuildSelectionVisuals();
             }
         });
 
         window.addEventListener('pointerup', () => {
             if (isDraggingObject) {
                 isDraggingObject = false;
-                controls.enabled = true; // Give camera viewport controls back to user
-                if (selectedObject) selectObject(selectedObject);
+                if(activeEngineMode === 'design') controls.enabled = true;
             }
         });
 
-        // Event Hook listeners
+        // --- Continuous Systems Real-Time Inputs Loop ---
+
+        window.addEventListener('keydown', (e) => {
+            keysPressed[e.key.toLowerCase()] = true;
+            
+            // Quick Trigger Color Panel Access Hotkey
+            if (e.key.toLowerCase() === 'c' && activeEngineMode === 'design') {
+                document.getElementById('mesh-color').click();
+            }
+            if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
+        });
+        window.addEventListener('keyup', (e) => { keysPressed[e.key.toLowerCase()] = false; });
+
+        function processRealTimeInputs() {
+            // Context Action A: Fly Camera Movement inside standard design panels
+            if (activeEngineMode === 'design') {
+                const flySpeed = 0.2;
+                if (keysPressed['w']) camera.translateZ(-flySpeed);
+                if (keysPressed['s']) camera.translateZ(flySpeed);
+                if (keysPressed['a']) camera.translateX(-flySpeed);
+                if (keysPressed['d']) camera.translateX(flySpeed);
+            }
+            
+            // Context Action B: Character Cube Physics Engine inside Sandbox Game Modes
+            if (activeEngineMode === 'game' && playerMesh) {
+                let moveX = 0;
+                let moveZ = 0;
+                
+                if (keysPressed['w']) moveZ -= playerSpeed;
+                if (keysPressed['s']) moveZ += playerSpeed;
+                if (keysPressed['a']) moveX -= playerSpeed;
+                if (keysPressed['d']) moveX += playerSpeed;
+
+                playerMesh.position.x += moveX;
+                playerMesh.position.z += moveZ;
+
+                // Physics Jump Handling
+                if (keysPressed[' '] && isGrounded) {
+                    playerVelocityY = jumpForce;
+                    isGrounded = false;
+                }
+
+                // Gravity Application
+                playerVelocityY += gravity;
+                playerMesh.position.y += playerVelocityY;
+
+                // Ground & Object Structural Collision Checks
+                let currentFloorHeight = 0;
+
+                objectsList.forEach(obj => {
+                    // Simple AABB bound checks across standard X/Z coordinates
+                    const boundX = (obj.scale.x / 2) + 0.4;
+                    const boundZ = (obj.scale.z / 2) + 0.4;
+
+                    if (Math.abs(playerMesh.position.x - obj.position.x) < boundX &&
+                        Math.abs(playerMesh.position.z - obj.position.z) < boundZ) {
+                        
+                        // Object top floor calculations
+                        const topSurface = obj.position.y + obj.scale.y;
+                        if (playerMesh.position.y >= topSurface - 0.3) {
+                            if (topSurface > currentFloorHeight) {
+                                currentFloorHeight = topSurface;
+                            }
+                        }
+                    }
+                });
+
+                // Floor Boundaries Enforcement Reset
+                if (playerMesh.position.y <= currentFloorHeight) {
+                    playerMesh.position.y = currentFloorHeight;
+                    playerVelocityY = 0;
+                    isGrounded = true;
+                }
+
+                // Smooth camera viewport trailing targeting player cube mesh positions
+                camera.position.set(playerMesh.position.x, playerMesh.position.y + 6, playerMesh.position.z + 12);
+                camera.lookAt(playerMesh.position);
+            }
+        }
+
+        // --- Sidebar Events Binding ---
         document.getElementById('add-cube-btn').addEventListener('click', () => spawnMesh('cube'));
         document.getElementById('add-pyramid-btn').addEventListener('click', () => spawnMesh('pyramid'));
         document.getElementById('delete-cube-btn').addEventListener('click', deleteSelected);
         document.getElementById('undo-btn').addEventListener('click', undo);
         document.getElementById('redo-btn').addEventListener('click', redo);
 
-        // Scale updates adjustment
-        function updateScale() {
-            if (selectedObject) {
-                const x = parseFloat(document.getElementById('scale-x').value);
-                const y = parseFloat(document.getElementById('scale-y').value);
-                const z = parseFloat(document.getElementById('scale-z').value);
-                selectedObject.scale.set(x, y, z);
-                selectionBox.setFromObject(selectedObject);
-            }
+        // Transformation inputs tracking
+        function updateTransformations() {
+            selectedObjects.forEach(obj => {
+                obj.scale.x = parseFloat(document.getElementById('scale-x').value);
+                obj.scale.y = parseFloat(document.getElementById('scale-y').value);
+                obj.scale.z = parseFloat(document.getElementById('scale-z').value);
+                obj.position.y = parseFloat(document.getElementById('pos-y').value);
+            });
+            rebuildSelectionVisuals();
         }
-        ['scale-x', 'scale-y', 'scale-z'].forEach(id => document.getElementById(id).addEventListener('input', updateScale));
+        ['scale-x', 'scale-y', 'scale-z', 'pos-y'].forEach(id => document.getElementById(id).addEventListener('input', updateTransformations));
 
-        // Elevation adjustment slider
-        document.getElementById('pos-y').addEventListener('input', (e) => {
-            if (selectedObject) {
-                selectedObject.position.y = parseFloat(e.target.value);
-                selectionBox.setFromObject(selectedObject);
-            }
-        });
-
-        // Coloring triggers
         document.getElementById('mesh-color').addEventListener('input', (e) => {
-            if (selectedObject) {
-                selectedObject.material.color.set(e.target.value);
-            }
-        });
-        document.getElementById('bg-color').addEventListener('input', (e) => {
-            scene.background.set(e.target.value);
-        });
-
-        // Storage Save / Load 
-        document.getElementById('save-btn').addEventListener('click', () => {
-            const projectData = objectsList.map(obj => ({
-                type: obj.geometry.type,
-                position: [obj.position.x, obj.position.y, obj.position.z],
-                scale: [obj.scale.x, obj.scale.y, obj.scale.z],
-                color: obj.material.color.getHexString()
-            }));
-            localStorage.setItem('derp_3d_scenes', JSON.stringify(projectData));
-            alert('Scene package stored inside browser layout successfully!');
-        });
-
-        document.getElementById('load-btn').addEventListener('click', () => {
-            const rawData = localStorage.getItem('derp_3d_scenes');
-            if (!rawData) return alert('No workspace state payload detected!');
-            saveHistoryState();
-            applyStateJSON(JSON.parse(rawData));
-        });
-
-        // Hotkeys shortcuts
-        window.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); }
-            if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
+            selectedObjects.forEach(obj => obj.material.color.set(e.target.value));
         });
 
         window.addEventListener('resize', () => {
@@ -527,17 +724,16 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // Initialization runtime loop
-        spawnMesh('cube');
+        // Initialize viewport scene
+        spawnMesh('cube', new THREE.Vector3(0,0,0));
         undoStack.length = 0;
         updateHistoryButtons();
 
+        // Runtime Loop
         function animate() {
             requestAnimationFrame(animate);
-            controls.update();
-            if (selectedObject && !isDraggingObject) {
-                selectionBox.update();
-            }
+            processRealTimeInputs();
+            if (activeEngineMode === 'design') controls.update();
             renderer.render(scene, camera);
         }
         animate();
