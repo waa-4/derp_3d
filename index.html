@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>derp_3d - v1</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>derp_3d - v2</title>
     <style>
         body {
             margin: 0;
@@ -13,6 +13,7 @@
             background-color: #1a1a1a;
             color: #eeeeee;
             user-select: none;
+            touch-action: none; /* Prevents default mobile scrolling */
         }
 
         #canvas-container {
@@ -21,68 +22,59 @@
             display: block;
         }
 
-        /* UI Overlay */
         #ui-container {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none; /* Let clicks pass through to canvas */
+            pointer-events: none;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 20px;
+            padding: 15px;
             box-sizing: border-box;
         }
 
         .panel {
-            background: rgba(30, 30, 30, 0.85);
+            background: rgba(25, 25, 25, 0.9);
             backdrop-filter: blur(5px);
             border: 1px solid #3c3c3c;
             border-radius: 8px;
-            padding: 15px;
-            pointer-events: auto; /* Re-enable clicks for UI */
+            padding: 12px;
+            pointer-events: auto;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            max-height: 85vh;
+            overflow-y: auto;
         }
 
-        /* Top Bar */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-        }
-
-        h1 {
+        header h1 {
             margin: 0;
-            font-size: 1.2rem;
-            letter-spacing: 1px;
+            font-size: 1.1rem;
             color: #00ffcc;
-            text-shadow: 0 0 5px rgba(0, 255, 204, 0.3);
         }
 
-        /* Sidebar Controls */
         #controls-sidebar {
-            width: 240px;
+            width: 260px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
         }
 
         .section-title {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: #888;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             border-bottom: 1px solid #333;
-            padding-bottom: 4px;
+            padding-bottom: 2px;
         }
 
         .btn-group {
             display: flex;
-            gap: 8px;
+            gap: 6px;
+            margin-bottom: 5px;
         }
 
         button {
@@ -90,11 +82,12 @@
             background: #2a2a2a;
             border: 1px solid #555;
             color: #fff;
-            padding: 8px 12px;
+            padding: 6px 10px;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 0.85rem;
             font-weight: bold;
-            transition: all 0.2s ease;
+            transition: all 0.15s ease;
         }
 
         button:hover {
@@ -102,34 +95,25 @@
             border-color: #00ffcc;
         }
 
+        button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            border-color: #555;
+        }
+
         button.danger:hover {
             background: #a32a2a;
             border-color: #ff4444;
         }
 
-        /* Transformation Sliders */
-        .slider-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .slider-row {
+        .setting-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 10px;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
         }
-
-        .slider-row label {
-            font-size: 0.8rem;
-            width: 15px;
-            font-weight: bold;
-        }
-
-        .slider-row label.x { color: #ff4444; }
-        .slider-row label.y { color: #44ff44; }
-        .slider-row label.z { color: #4444ff; }
 
         input[type=range] {
             flex: 1;
@@ -137,18 +121,34 @@
             background: #333;
             height: 6px;
             border-radius: 3px;
-            outline: none;
         }
 
-        /* Instructions Footer */
+        input[type=color] {
+            border: none;
+            width: 40px;
+            height: 24px;
+            border-radius: 4px;
+            background: none;
+            cursor: pointer;
+        }
+
         footer {
             text-align: center;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: #aaa;
             align-self: center;
-            background: rgba(20, 20, 20, 0.7);
-            padding: 6px 16px;
+            background: rgba(20, 20, 20, 0.8);
+            padding: 6px 12px;
             border-radius: 20px;
+            pointer-events: auto;
+        }
+
+        /* Mobile specific style tweaks */
+        @media (max-width: 768px) {
+            #ui-container { padding: 8px; }
+            #controls-sidebar { width: 210px; font-size: 0.8rem; }
+            button { padding: 8px 6px; font-size: 0.75rem; }
+            footer { display: none; } /* Hide keys guide on mobile */
         }
     </style>
 </head>
@@ -157,44 +157,66 @@
     <div id="canvas-container"></div>
 
     <div id="ui-container">
-        <header class="panel" style="width: auto; align-self: flex-start;">
-            <h1>derp_3d <span style="color:#888; font-size: 0.8rem;">v1.0</span></h1>
+        <header class="panel" style="align-self: flex-start;">
+            <h1>derp_3d <span style="color:#888; font-size: 0.75rem;">v2.0</span></h1>
         </header>
 
         <div id="controls-sidebar" class="panel">
             <div>
-                <div class="section-title">Scene Actions</div>
+                <div class="section-title">History</div>
                 <div class="btn-group">
-                    <button id="add-cube-btn">+ Add Cube</button>
-                    <button id="delete-cube-btn" class="danger">- Delete</button>
+                    <button id="undo-btn" disabled>Undo</button>
+                    <button id="redo-btn" disabled>Redo</button>
                 </div>
             </div>
 
             <div>
-                <div class="section-title">Rescale Selected</div>
-                <div class="slider-group">
-                    <div class="slider-row">
-                        <label class="x">X</label>
-                        <input type="range" id="scale-x" min="0.1" max="5" step="0.1" value="1">
-                    </div>
-                    <div class="slider-row">
-                        <label class="y">Y</label>
-                        <input type="range" id="scale-y" min="0.1" max="5" step="0.1" value="1">
-                    </div>
-                    <div class="slider-row">
-                        <label class="z">Z</label>
-                        <input type="range" id="scale-z" min="0.1" max="5" step="0.1" value="1">
-                    </div>
+                <div class="section-title">Objects</div>
+                <div class="btn-group">
+                    <button id="add-cube-btn">+ Cube</button>
+                    <button id="delete-cube-btn" class="danger">Delete</button>
+                </div>
+                <div class="setting-row">
+                    <label>Mesh Color</label>
+                    <input type="color" id="mesh-color" value="#8899aa">
                 </div>
             </div>
-            
-            <div style="font-size: 0.75rem; color: #888; line-height: 1.3;">
-                <span style="color: #00ffcc; font-weight:bold;">Click</span> a cube to select it. Selected cubes get a bright wireframe highlight.
+
+            <div>
+                <div class="section-title">Scale Selected</div>
+                <div class="setting-row"><label style="color:#ff4444">X</label><input type="range" id="scale-x" min="0.1" max="5" step="0.1" value="1"></div>
+                <div class="setting-row"><label style="color:#44ff44">Y</label><input type="range" id="scale-y" min="0.1" max="5" step="0.1" value="1"></div>
+                <div class="setting-row"><label style="color:#4444ff">Z</label><input type="range" id="scale-z" min="0.1" max="5" step="0.1" value="1"></div>
+            </div>
+
+            <div>
+                <div class="section-title">Environment</div>
+                <div class="setting-row">
+                    <label>Background</label>
+                    <input type="color" id="bg-color" value="#1e1e1e">
+                </div>
+                <div class="setting-row">
+                    <label>Ambient Light</label>
+                    <input type="range" id="ambient-intensity" min="0" max="2" step="0.1" value="0.6">
+                </div>
+                <div class="setting-row">
+                    <label>Sun Light</label>
+                    <input type="range" id="sun-intensity" min="0" max="3" step="0.1" value="0.8">
+                </div>
+            </div>
+
+            <div>
+                <div class="section-title">Storage</div>
+                <div class="btn-group">
+                    <button id="save-btn">Save project</button>
+                    <button id="load-btn">Load project</button>
+                </div>
             </div>
         </div>
 
         <footer>
-            Left Click + Drag to <b>Orbit</b> | Right Click + Drag to <b>Pan</b> | Scroll to <b>Zoom</b>
+            Left Click: Select/Orbit | Right Click: Pan | Scroll: Zoom <br>
+            <span style="color:#00ffcc; font-weight:bold;">Mobile:</span> One finger to Orbit, Two fingers to Pinch/Pan
         </footer>
     </div>
 
@@ -202,79 +224,132 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <script>
-        // --- Scene Setup ---
+        // --- Core Scene Initialization ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x1e1e1e);
 
-        // Camera
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(5, 5, 8);
 
-        // Renderer
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Performance cap
         renderer.shadowMap.enabled = true;
         container.appendChild(renderer.domElement);
 
-        // Controls (Looking around)
+        // Orbit controls built-in touch navigation support for mobile out-of-the-box
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.target.set(0, 0, 0);
 
-        // --- Lighting ---
-        const ambientLight = new THREE.AmbientLight(0x666666);
+        // --- Custom Systems Setup ---
+        const ambientLight = new THREE.AmbientLight(0x666666, 0.6);
         scene.add(ambientLight);
 
-        const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
-        dirLight1.position.set(10, 20, 10);
-        dirLight1.castShadow = true;
-        scene.add(dirLight1);
+        const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        sunLight.position.set(10, 20, 10);
+        sunLight.castShadow = true;
+        scene.add(sunLight);
 
-        const dirLight2 = new THREE.DirectionalLight(0x44aaff, 0.3);
-        dirLight2.position.set(-10, -10, -10);
-        scene.add(dirLight2);
-
-        // --- Grid & Floor Helper ---
         const gridHelper = new THREE.GridHelper(20, 20, 0x00ffcc, 0x444444);
-        gridHelper.position.y = -0.01; // Slightly below 0 to avoid z-fighting
         scene.add(gridHelper);
 
-        // --- Object Tracking & Interaction variables ---
-        const cubes = [];
+        let cubes = [];
         let selectedObject = null;
-        
-        // Raycasting for selection
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
-        // Selection Highlight Wireframe
-        const selectionGeometry = new THREE.BoxGeometry(1.02, 1.02, 1.02);
-        const selectionMaterial = new THREE.MeshBasicMaterial({
-            color: 0x00ffcc,
-            wireframe: true,
-            transparent: true,
-            opacity: 0.8
-        });
-        const selectionBox = new THREE.Mesh(selectionGeometry, selectionMaterial);
+        // Highlighting Box
+        const selectionBox = new THREE.Mesh(
+            new THREE.BoxGeometry(1.02, 1.02, 1.02),
+            new THREE.MeshBasicMaterial({ color: 0x00ffcc, wireframe: true, transparent: true, opacity: 0.8 })
+        );
         selectionBox.visible = false;
         scene.add(selectionBox);
 
-        // --- Core Functions ---
+        // --- Undo / Redo History Engine ---
+        const undoStack = [];
+        const redoStack = [];
 
-        // Function to create a cube
-        function createCube(x = 0, y = 0.5, z = 0) {
-            const geometry = new THREE.BoxGeometry(1, 1, 1);
+        function saveHistoryState() {
+            const state = cubes.map(c => ({
+                position: c.position.clone(),
+                scale: c.scale.clone(),
+                color: c.material.color.getHexString(),
+                id: c.uuid
+            }));
+            undoStack.push(JSON.stringify(state));
+            redoStack.length = 0; // Clear Redo history on new structural action
+            updateHistoryButtons();
+        }
+
+        function undo() {
+            if (undoStack.length === 0) return;
+            // Push current state to redo
+            const currentState = cubes.map(c => ({
+                position: c.position.clone(),
+                scale: c.scale.clone(),
+                color: c.material.color.getHexString(),
+                id: c.uuid
+            }));
+            redoStack.push(JSON.stringify(currentState));
+
+            const targetState = JSON.parse(undoStack.pop());
+            applyStateJSON(targetState);
+            updateHistoryButtons();
+        }
+
+        function redo() {
+            if (redoStack.length === 0) return;
+            const targetState = JSON.parse(redoStack.pop());
             
-            // Randomish fun gray-blue shades for default blender vibe
-            const randomColor = new THREE.Color().setHSL(0.6, 0.1, 0.4 + Math.random() * 0.2);
-            const material = new THREE.MeshStandardMaterial({ 
-                color: randomColor,
-                roughness: 0.4,
-                metalness: 0.1
+            const currentState = cubes.map(c => ({
+                position: c.position.clone(),
+                scale: c.scale.clone(),
+                color: c.material.color.getHexString(),
+                id: c.uuid
+            }));
+            undoStack.push(JSON.stringify(currentState));
+            
+            applyStateJSON(targetState);
+            updateHistoryButtons();
+        }
+
+        function applyStateJSON(stateArray) {
+            // Clear current objects
+            cubes.forEach(c => scene.remove(c));
+            cubes = [];
+            selectObject(null);
+
+            // Rebuild from snapshot records
+            stateArray.forEach(data => {
+                const geom = new THREE.BoxGeometry(1, 1, 1);
+                const mat = new THREE.MeshStandardMaterial({ color: parseInt(data.color, 16), roughness: 0.4 });
+                const cube = new THREE.Mesh(geom, mat);
+                cube.position.copy(data.position);
+                cube.scale.copy(data.scale);
+                cube.uuid = data.id;
+                cube.castShadow = true;
+                cube.receiveShadow = true;
+                scene.add(cube);
+                cubes.push(cube);
             });
+        }
+
+        function updateHistoryButtons() {
+            document.getElementById('undo-btn').disabled = (undoStack.length === 0);
+            document.getElementById('redo-btn').disabled = (redoStack.length === 0);
+        }
+
+        // --- Core Operational Mutators ---
+
+        function createCube(x = 0, y = 0.5, z = 0, colorHex = null) {
+            saveHistoryState(); // Log history block before change happens
+
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const chosenColor = colorHex || document.getElementById('mesh-color').value;
+            const material = new THREE.MeshStandardMaterial({ color: chosenColor, roughness: 0.4 });
             
             const cube = new THREE.Mesh(geometry, material);
             cube.position.set(x, y, z);
@@ -283,79 +358,40 @@
             
             scene.add(cube);
             cubes.push(cube);
-            
             selectObject(cube);
-            return cube;
         }
 
-        // Handle Object Selection
+        function deleteSelected() {
+            if (selectedObject) {
+                saveHistoryState();
+                scene.remove(selectedObject);
+                cubes = cubes.filter(c => c !== selectedObject);
+                selectObject(null);
+            }
+        }
+
         function selectObject(object) {
             selectedObject = object;
             if (selectedObject) {
                 selectionBox.visible = true;
-                // Match visual selection ring size and position
                 selectionBox.position.copy(selectedObject.position);
                 selectionBox.scale.copy(selectedObject.scale);
                 
-                // Update UI sliders to match object's current scale
                 document.getElementById('scale-x').value = selectedObject.scale.x;
                 document.getElementById('scale-y').value = selectedObject.scale.y;
                 document.getElementById('scale-z').value = selectedObject.scale.z;
+                document.getElementById('mesh-color').value = "#" + selectedObject.material.color.getHexString();
             } else {
                 selectionBox.visible = false;
             }
         }
 
-        // Delete Selected Object
-        function deleteSelected() {
-            if (selectedObject) {
-                scene.remove(selectedObject);
-                const index = cubes.indexOf(selectedObject);
-                if (index > -1) {
-                    cubes.splice(index, 1);
-                }
-                selectObject(null);
-            }
-        }
+        // --- Global Interactions & Events ---
 
-        // --- UI & Event Listeners ---
-
-        // Spawn initial block
-        createCube(0, 0.5, 0);
-
-        // Button Actions
-        document.getElementById('add-cube-btn').addEventListener('click', () => {
-            // Spawn new cubes with a slight random offset so they aren't directly inside each other
-            const offset = (Math.random() - 0.5) * 3;
-            createCube(offset, 0.5, offset);
-        });
-
-        document.getElementById('delete-cube-btn').addEventListener('click', deleteSelected);
-
-        // Real-time Rescaling Logic
-        function updateScale() {
-            if (selectedObject) {
-                const x = parseFloat(document.getElementById('scale-x').value);
-                const y = parseFloat(document.getElementById('scale-y').value);
-                const z = parseFloat(document.getElementById('scale-z').value);
-                
-                selectedObject.scale.set(x, y, z);
-                selectionBox.scale.set(x, y, z); // Keep selection outline synchronized
-            }
-        }
-
-        document.getElementById('scale-x').addEventListener('input', updateScale);
-        document.getElementById('scale-y').addEventListener('input', updateScale);
-        document.getElementById('scale-z').addEventListener('input', updateScale);
-
-        // Click on canvas to select object
-        window.addEventListener('pointerdown', (event) => {
-            // Only trigger raycast if clicking the canvas area, ignoring HTML UI overlays
-            if (event.target.tagName !== 'CANVAS') return;
-
-            // Calculate mouse position in normalized device coordinates
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        // Unified Pointer Handler (Handles Mouse Click + Mobile Tap selection flawlessly)
+        function handlePointerSelection(clientX, clientY) {
+            mouse.x = (clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(clientY / window.innerHeight) * 2 + 1;
 
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(cubes);
@@ -363,37 +399,129 @@
             if (intersects.length > 0) {
                 selectObject(intersects[0].object);
             }
+        }
+
+        window.addEventListener('pointerdown', (e) => {
+            if (e.target.tagName === 'CANVAS') {
+                handlePointerSelection(e.clientX, e.clientY);
+            }
         });
 
-        // Delete keybind shortcut
+        // Sliders & Controls inputs listeners
+        document.getElementById('add-cube-btn').addEventListener('click', () => {
+            const offset = (Math.random() - 0.5) * 3;
+            createCube(offset, 0.5, offset);
+        });
+        document.getElementById('delete-cube-btn').addEventListener('click', deleteSelected);
+        
+        // History triggers
+        document.getElementById('undo-btn').addEventListener('click', undo);
+        document.getElementById('redo-btn').addEventListener('click', redo);
+
+        // Live Transformations adjustments
+        function updateScale() {
+            if (selectedObject) {
+                // We don't flood history with every pixel dragged, save state on interaction drop could be added later
+                const x = parseFloat(document.getElementById('scale-x').value);
+                const y = parseFloat(document.getElementById('scale-y').value);
+                const z = parseFloat(document.getElementById('scale-z').value);
+                selectedObject.scale.set(x, y, z);
+                selectionBox.scale.set(x, y, z);
+            }
+        }
+        ['scale-x', 'scale-y', 'scale-z'].forEach(id => document.getElementById(id).addEventListener('input', updateScale));
+
+        // Color updates
+        document.getElementById('mesh-color').addEventListener('input', (e) => {
+            if (selectedObject) {
+                selectedObject.material.color.set(e.target.value);
+            }
+        });
+
+        document.getElementById('bg-color').addEventListener('input', (e) => {
+            scene.background.set(e.target.value);
+        });
+
+        // Light intensities adjustments
+        document.getElementById('ambient-intensity').addEventListener('input', (e) => {
+            ambientLight.intensity = parseFloat(e.target.value);
+        });
+        document.getElementById('sun-intensity').addEventListener('input', (e) => {
+            sunLight.intensity = parseFloat(e.target.value);
+        });
+
+        // --- Save / Load Feature (Local Storage State Preservation) ---
+        document.getElementById('save-btn').addEventListener('click', () => {
+            const projectData = cubes.map(c => ({
+                position: [c.position.x, c.position.y, c.position.z],
+                scale: [c.scale.x, c.scale.y, c.scale.z],
+                color: c.material.color.getHexString()
+            }));
+            localStorage.setItem('derp_3d_project', JSON.stringify(projectData));
+            alert('Project saved successfully to browser local storage!');
+        });
+
+        document.getElementById('load-btn').addEventListener('click', () => {
+            const rawData = localStorage.getItem('derp_3d_project');
+            if (!rawData) {
+                alert('No saved project payload found!');
+                return;
+            }
+            saveHistoryState();
+            const projectData = JSON.parse(rawData);
+            
+            cubes.forEach(c => scene.remove(c));
+            cubes = [];
+            
+            projectData.forEach(data => {
+                const geom = new THREE.BoxGeometry(1, 1, 1);
+                const mat = new THREE.MeshStandardMaterial({ color: parseInt(data.color, 16), roughness: 0.4 });
+                const cube = new THREE.Mesh(geom, mat);
+                cube.position.fromArray(data.position);
+                cube.scale.fromArray(data.scale);
+                cube.castShadow = true;
+                cube.receiveShadow = true;
+                scene.add(cube);
+                cubes.push(cube);
+            });
+            selectObject(null);
+        });
+
+        // Key shortcuts
         window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+                e.preventDefault();
+                undo();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+                e.preventDefault();
+                redo();
+            }
             if (e.key === 'Delete' || e.key === 'Backspace') {
                 deleteSelected();
             }
         });
 
-        // Window Resizing handling
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // --- Animation Loop ---
+        // Spawn initial element
+        createCube(0, 0.5, 0);
+        undoStack.length = 0; // Don't allow undoing the default initialization block
+        updateHistoryButtons();
+
+        // Loop
         function animate() {
             requestAnimationFrame(animate);
-            
-            // Required if controls.enableDamping or controls.autoRotate are set to true
-            controls.update(); 
-            
-            // Keep track of outline placement if object moves dynamically
+            controls.update();
             if (selectedObject) {
                 selectionBox.position.copy(selectedObject.position);
             }
-
             renderer.render(scene, camera);
         }
-        
         animate();
     </script>
 </body>
