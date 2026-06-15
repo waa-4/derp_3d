@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>derp_3d - v1</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #eeeeee;
+            user-select: none;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        /* UI Overlay */
+        #ui-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Let clicks pass through to canvas */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .panel {
+            background: rgba(30, 30, 30, 0.85);
+            backdrop-filter: blur(5px);
+            border: 1px solid #3c3c3c;
+            border-radius: 8px;
+            padding: 15px;
+            pointer-events: auto; /* Re-enable clicks for UI */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        /* Top Bar */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            color: #00ffcc;
+            text-shadow: 0 0 5px rgba(0, 255, 204, 0.3);
+        }
+
+        /* Sidebar Controls */
+        #controls-sidebar {
+            width: 240px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .section-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 4px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        button {
+            flex: 1;
+            background: #2a2a2a;
+            border: 1px solid #555;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background: #3a3a3a;
+            border-color: #00ffcc;
+        }
+
+        button.danger:hover {
+            background: #a32a2a;
+            border-color: #ff4444;
+        }
+
+        /* Transformation Sliders */
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .slider-row label {
+            font-size: 0.8rem;
+            width: 15px;
+            font-weight: bold;
+        }
+
+        .slider-row label.x { color: #ff4444; }
+        .slider-row label.y { color: #44ff44; }
+        .slider-row label.z { color: #4444ff; }
+
+        input[type=range] {
+            flex: 1;
+            accent-color: #00ffcc;
+            background: #333;
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        /* Instructions Footer */
+        footer {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #aaa;
+            align-self: center;
+            background: rgba(20, 20, 20, 0.7);
+            padding: 6px 16px;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="ui-container">
+        <header class="panel" style="width: auto; align-self: flex-start;">
+            <h1>derp_3d <span style="color:#888; font-size: 0.8rem;">v1.0</span></h1>
+        </header>
+
+        <div id="controls-sidebar" class="panel">
+            <div>
+                <div class="section-title">Scene Actions</div>
+                <div class="btn-group">
+                    <button id="add-cube-btn">+ Add Cube</button>
+                    <button id="delete-cube-btn" class="danger">- Delete</button>
+                </div>
+            </div>
+
+            <div>
+                <div class="section-title">Rescale Selected</div>
+                <div class="slider-group">
+                    <div class="slider-row">
+                        <label class="x">X</label>
+                        <input type="range" id="scale-x" min="0.1" max="5" step="0.1" value="1">
+                    </div>
+                    <div class="slider-row">
+                        <label class="y">Y</label>
+                        <input type="range" id="scale-y" min="0.1" max="5" step="0.1" value="1">
+                    </div>
+                    <div class="slider-row">
+                        <label class="z">Z</label>
+                        <input type="range" id="scale-z" min="0.1" max="5" step="0.1" value="1">
+                    </div>
+                </div>
+            </div>
+            
+            <div style="font-size: 0.75rem; color: #888; line-height: 1.3;">
+                <span style="color: #00ffcc; font-weight:bold;">Click</span> a cube to select it. Selected cubes get a bright wireframe highlight.
+            </div>
+        </div>
+
+        <footer>
+            Left Click + Drag to <b>Orbit</b> | Right Click + Drag to <b>Pan</b> | Scroll to <b>Zoom</b>
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1e1e1e);
+
+        // Camera
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(5, 5, 8);
+
+        // Renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+
+        // Controls (Looking around)
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 0, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0x666666);
+        scene.add(ambientLight);
+
+        const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight1.position.set(10, 20, 10);
+        dirLight1.castShadow = true;
+        scene.add(dirLight1);
+
+        const dirLight2 = new THREE.DirectionalLight(0x44aaff, 0.3);
+        dirLight2.position.set(-10, -10, -10);
+        scene.add(dirLight2);
+
+        // --- Grid & Floor Helper ---
+        const gridHelper = new THREE.GridHelper(20, 20, 0x00ffcc, 0x444444);
+        gridHelper.position.y = -0.01; // Slightly below 0 to avoid z-fighting
+        scene.add(gridHelper);
+
+        // --- Object Tracking & Interaction variables ---
+        const cubes = [];
+        let selectedObject = null;
+        
+        // Raycasting for selection
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        // Selection Highlight Wireframe
+        const selectionGeometry = new THREE.BoxGeometry(1.02, 1.02, 1.02);
+        const selectionMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00ffcc,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.8
+        });
+        const selectionBox = new THREE.Mesh(selectionGeometry, selectionMaterial);
+        selectionBox.visible = false;
+        scene.add(selectionBox);
+
+        // --- Core Functions ---
+
+        // Function to create a cube
+        function createCube(x = 0, y = 0.5, z = 0) {
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            
+            // Randomish fun gray-blue shades for default blender vibe
+            const randomColor = new THREE.Color().setHSL(0.6, 0.1, 0.4 + Math.random() * 0.2);
+            const material = new THREE.MeshStandardMaterial({ 
+                color: randomColor,
+                roughness: 0.4,
+                metalness: 0.1
+            });
+            
+            const cube = new THREE.Mesh(geometry, material);
+            cube.position.set(x, y, z);
+            cube.castShadow = true;
+            cube.receiveShadow = true;
+            
+            scene.add(cube);
+            cubes.push(cube);
+            
+            selectObject(cube);
+            return cube;
+        }
+
+        // Handle Object Selection
+        function selectObject(object) {
+            selectedObject = object;
+            if (selectedObject) {
+                selectionBox.visible = true;
+                // Match visual selection ring size and position
+                selectionBox.position.copy(selectedObject.position);
+                selectionBox.scale.copy(selectedObject.scale);
+                
+                // Update UI sliders to match object's current scale
+                document.getElementById('scale-x').value = selectedObject.scale.x;
+                document.getElementById('scale-y').value = selectedObject.scale.y;
+                document.getElementById('scale-z').value = selectedObject.scale.z;
+            } else {
+                selectionBox.visible = false;
+            }
+        }
+
+        // Delete Selected Object
+        function deleteSelected() {
+            if (selectedObject) {
+                scene.remove(selectedObject);
+                const index = cubes.indexOf(selectedObject);
+                if (index > -1) {
+                    cubes.splice(index, 1);
+                }
+                selectObject(null);
+            }
+        }
+
+        // --- UI & Event Listeners ---
+
+        // Spawn initial block
+        createCube(0, 0.5, 0);
+
+        // Button Actions
+        document.getElementById('add-cube-btn').addEventListener('click', () => {
+            // Spawn new cubes with a slight random offset so they aren't directly inside each other
+            const offset = (Math.random() - 0.5) * 3;
+            createCube(offset, 0.5, offset);
+        });
+
+        document.getElementById('delete-cube-btn').addEventListener('click', deleteSelected);
+
+        // Real-time Rescaling Logic
+        function updateScale() {
+            if (selectedObject) {
+                const x = parseFloat(document.getElementById('scale-x').value);
+                const y = parseFloat(document.getElementById('scale-y').value);
+                const z = parseFloat(document.getElementById('scale-z').value);
+                
+                selectedObject.scale.set(x, y, z);
+                selectionBox.scale.set(x, y, z); // Keep selection outline synchronized
+            }
+        }
+
+        document.getElementById('scale-x').addEventListener('input', updateScale);
+        document.getElementById('scale-y').addEventListener('input', updateScale);
+        document.getElementById('scale-z').addEventListener('input', updateScale);
+
+        // Click on canvas to select object
+        window.addEventListener('pointerdown', (event) => {
+            // Only trigger raycast if clicking the canvas area, ignoring HTML UI overlays
+            if (event.target.tagName !== 'CANVAS') return;
+
+            // Calculate mouse position in normalized device coordinates
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(cubes);
+
+            if (intersects.length > 0) {
+                selectObject(intersects[0].object);
+            }
+        });
+
+        // Delete keybind shortcut
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                deleteSelected();
+            }
+        });
+
+        // Window Resizing handling
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Required if controls.enableDamping or controls.autoRotate are set to true
+            controls.update(); 
+            
+            // Keep track of outline placement if object moves dynamically
+            if (selectedObject) {
+                selectionBox.position.copy(selectedObject.position);
+            }
+
+            renderer.render(scene, camera);
+        }
+        
+        animate();
+    </script>
+</body>
+</html>
